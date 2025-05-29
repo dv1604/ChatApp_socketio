@@ -1,0 +1,159 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication nd user management
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  avatarUrl    String?  @map("avatar_url")
+  isOnline     Boolean  @default(false) @map("is_online")
+  lastSeen     DateTime @default(now()) @map("last_seen")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations - messages sent by user
+  sentMessages         Message[]            @relation("MessageSender")
+  // relations - group memberships
+  groupMemberships     GroupMember[]        @relation("UserGroupMember")
+  // relations- groups created by user
+  createdGroups        Group[]              @relation("GroupCreator")
+  readReceipts         MessageReadReceipt[] // Track what messages user has read
+  // Conversation relations (fixed)
+  conversationsAsUser1 Conversation[]       @relation("ConversationUser1")
+  conversationsAsUser2 Conversation[]       @relation("ConversationUser2")
+
+  @@map("users")
+}
+
+// groups for group chat functionality
+model Group {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  avatarUrl   String?  @map("avatar_url")
+  isPrivate   Boolean  @default(false) @map("is_private")
+  createById  Int      @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // reations - creator of the group
+  createdBy User          @relation("GroupCreator", fields: [createById], references: [id], onDelete: Cascade)
+  // relations - group members
+  members   GroupMember[]
+  // relations = messages in the group
+  messages  Message[]
+
+  @@map("groups")
+}
+
+// group membership to manage uses in groups
+model GroupMember {
+  id       Int             @id @default(autoincrement())
+  userId   Int             @map("user_id")
+  groupId  Int             @map("group_id")
+  role     GroupMemberRole @default(MEMBER)
+  joinedAt DateTime        @default(now()) @map("joined_at")
+
+  // relations - user in the group
+  user  User  @relation("UserGroupMember", fields: [userId], references: [id], onDelete: Cascade)
+  // relations - group member
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@map("group_members")
+}
+
+// enum for group roles
+enum GroupMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+// messages of user in priavte or group chats
+model Message {
+  id          Int         @id @default(autoincrement())
+  senderId    Int         @map("sender_id")
+  content     String
+  messageType messageType @default(TEXT) @map("message_type")
+
+  // For private messages - reference conversation
+  conversationId Int? @map("conversation_id")
+
+  // for group messages
+  groupId Int? @map("group_id")
+
+  // message status
+  isRead   Boolean   @default(false) @map("is_read")
+  isEdited Boolean   @default(false) @map("is_edited")
+  editedAt DateTime? @map("edited_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // relations - sender of the message
+  sender       User                 @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  readReceipts MessageReadReceipt[] // Track who read this message
+
+  // relations - private message to conversation
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  // relations - group message
+  group Group? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+enum messageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+// conversations to track chat relationships
+model Conversation {
+  id            Int      @id @default(autoincrement())
+  user1Id       Int      @map("user1_id")
+  user2Id       Int      @map("user2_id")
+  lastMessageAt DateTime @default(now()) @map("last_message_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations (FIXED - added these)
+  user1   User      @relation("ConversationUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2   User      @relation("ConversationUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  Message Message[]
+
+  // Ensure unique conversation between two users
+  @@unique([user1Id, user2Id])
+  @@map("conversations")
+}
+
+// Message read receipts for group messages (NEW - tracks who read what in groups)
+model MessageReadReceipt {
+  id        Int      @id @default(autoincrement())
+  messageId Int      @map("message_id")
+  userId    Int      @map("user_id")
+  readAt    DateTime @default(now()) @map("read_at")
+
+  // Relations
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Ensure user can only read a message once
+  @@unique([messageId, userId])
+  @@map("message_read_receipts")
+}
