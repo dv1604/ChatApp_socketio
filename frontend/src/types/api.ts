@@ -10,6 +10,13 @@ export interface ApiResponse<T> {
     offset?: number;
 }
 
+export interface ApiError{
+    data: {
+        error: string;
+    };
+    status : number
+}
+
 export interface LoginRequest {
     email: string;
     password: string;

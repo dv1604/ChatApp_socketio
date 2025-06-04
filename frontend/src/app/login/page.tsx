@@ -9,6 +9,7 @@ import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { MdAlternateEmail } from "react-icons/md";
 import { TbLockPassword } from "react-icons/tb";
 import { useSelector } from "react-redux";
+import { ApiError } from "@/types/api";
 
 export default function Login() {
 
@@ -18,11 +19,8 @@ export default function Login() {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [apiError, setApiError] = useState('');
     const [login, { data, error }] = useLoginMutation();
-    
-    useEffect(() => {
-        
-    })
 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,10 +32,26 @@ export default function Login() {
         }
     };
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setApiError('');
 
-        console.log(email, password);
+        try {
+
+            const response = await login({ email, password }).unwrap();
+            console.log('Login Response: ', response);
+
+        } catch (err) {
+            console.log('Login Error : ', err);
+
+            if (err && typeof err === "object" && 'data' in err) {
+                const errorData = err as ApiError;
+                if (errorData?.data.error) {
+                    setApiError(errorData?.data.error);
+                }
+            }
+        }
+
     }
 
 
@@ -47,7 +61,7 @@ export default function Login() {
                 <div className="max-w-ms w-[60%] relative flex flex-col items-center justify-center">
                     {/* chat app floating element */}
                     <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-10 mb-3">
-                        <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full transition-transform ease-out duration-300 hover:scale-105">
+                        <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full transition-transform ease-out duration-300 hover:scale-105 shadow-[0px_10px_30px_rgba(0,0,0,0.3),_0px_5px_15px_rgba(0,0,0,0.2)]">
                             <IoChatbubbleEllipsesOutline
                                 className="text-white w-12 h-12" />
                         </div>
@@ -56,7 +70,7 @@ export default function Login() {
                     {/* login form card*/}
                     <div className="bg-[#1a1a2e]/80 backdrop-blur-md rounded-2xl shadow-[0 4px 30px rgba(0, 0, 0, 0.4)] p-8 md:p-10 border border-white/30 relative overflow-hidden lg:w-1/2 md:w-[80%]">
                         <div className="absolute inset-0 glass-gradient"></div>
-                        <h1 className="text-4xl font-bold text-white text-center mb-2 nt-8">Welcome Back</h1>
+                        <h1 className="text-3xl font-bold text-white text-center mb-2 nt-8">Welcome Back</h1>
                         <p className="text-gray-400 text-center mb-8">Sign in to continue chatting</p>
 
                         <form className="space-y-6" onSubmit={handleSubmit}>
@@ -68,7 +82,7 @@ export default function Login() {
                                 disabled={false}
                                 icon={MdAlternateEmail}
                                 value={email}
-                                onChange={handleChange}
+                                onChange={(handleChange)}
                             />
 
                             <Input
@@ -81,6 +95,14 @@ export default function Login() {
                                 value={password}
                                 onChange={handleChange}
                             />
+
+                            {apiError && (
+                                <div className="rounded-lg p-4 text-sm  bg-red-900/30 border-red-700 text-red-200">
+                                    <div className="flex items-center">
+                                        <span>{apiError}</span>
+                                    </div>
+                                </div>
+                            )}
 
                             <Button
                                 type="submit"
