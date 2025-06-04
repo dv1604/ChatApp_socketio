@@ -28,14 +28,8 @@ export const generateToken = (payload :JWTPayload) => {
 }
 
 export const verifyToken = (token: string) => {
-    console.log('here')
-
     try {
-        console.log(token)
-        console.log(JWT_SECRET)
         const decoded = jwt.verify(token, JWT_SECRET);
-        console.log('here3')
-        console.log(decoded)
         return decoded as JWTPayload
     } catch (error) {
 

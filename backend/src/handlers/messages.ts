@@ -1,7 +1,7 @@
 import { activeUsers } from './../utils/activeUsers';
 import { Server } from "socket.io";
 import { AuthenticatedSocket } from "../middleware/socketAuth";
-import prisma from "../../config/database";
+import prisma from "../config/database";
 import { broadcastMessage, findOrCreateConversation } from "../utils/messageUtils";
 import { getMessagesData, groupMessageData, privateMessageData } from "../types/message";
 
@@ -15,7 +15,7 @@ export const handlePrivateMessage = async (io: Server, socket: AuthenticatedSock
         }
 
         const { receiverId, content, messageType, tempId } = data;
-        console.log(data,receiverId,content)
+        console.log(data, receiverId, content)
 
         if (!receiverId || !content?.trim()) {
             socket.emit('error', {

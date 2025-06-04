@@ -8,6 +8,6 @@ router.post('/register', createNewUser);
 router.post('/login', loginUser);
 // below two routes are protected ie they require authetication
 router.get('/me', authenticateUser ,getUserProfile);
-router.post('/logout',authenticateUser,logoutUser)
+router.patch('/logout',authenticateUser,logoutUser)
 
 export default router;

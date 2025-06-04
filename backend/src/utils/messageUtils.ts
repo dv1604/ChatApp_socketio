@@ -1,5 +1,5 @@
 import { Server } from "socket.io";
-import prisma from "../../config/database";
+import prisma from "../config/database";
 import { messageData } from "../types/message";
 
 export const findOrCreateConversation = async (user1Id: number, user2Id: number) => {

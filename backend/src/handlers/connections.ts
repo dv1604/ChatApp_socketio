@@ -36,10 +36,10 @@ export const handleConnection = (io: Server, socket: AuthenticatedSocket) => {
 
 // handle socket disconnection
 export const handleDisconnection = (io: Server, socket: AuthenticatedSocket) => {
-    
+
     if (!socket.userId || !socket.userData) {
         console.warn('Attempted to handle disconnection for unidentified socket.');
-        return;       
+        return;
     }
 
     //remove user from active users map

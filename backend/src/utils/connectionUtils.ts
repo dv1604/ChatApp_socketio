@@ -1,5 +1,5 @@
 import { Server } from "socket.io";
-import prisma from "../../config/database"
+import prisma from "../config/database"
 import { AuthenticatedSocket } from "../middleware/socketAuth";
 
 // update online status of user after connection is made

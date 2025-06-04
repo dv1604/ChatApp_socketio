@@ -1,6 +1,6 @@
 import { GroupMemberRole } from '@prisma/client';
 import prisma from '../config/database';
-import { removeActiveUser } from './../socket/utils/activeUsers';
+import { removeActiveUser } from './../utils/activeUsers';
 import { Request, Response } from "express";
 
 // add user to a group

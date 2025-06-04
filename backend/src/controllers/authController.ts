@@ -76,9 +76,7 @@ export const createNewUser = async (req: Request, res: Response) => {
         res.status(500).json({
             error: 'Internal server error during registration'
         });
-
     }
-
 };
 
 export const loginUser = async (req: Request, res: Response) => {

@@ -1,15 +1,15 @@
 import express from 'express';
-import {createServer} from 'http';
-import {Server} from 'socket.io';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import groupsRoutes from './routes/groups';
 import usersRoutes from './routes/users';
-import { authenticateSocket } from './socket/middleware/socketAuth';
-import { handleConnection, handleDisconnection } from './socket/handlers/connections';
-import { handleGetMessages, handleGroupMessage, handlePrivateMessage } from './socket/handlers/messages';
-import { handleMarkAsRead, handleTyping } from './socket/handlers/messageStatus';
+import { authenticateSocket } from './middleware/socketAuth';
+import { handleConnection, handleDisconnection } from './handlers/connections';
+import { handleGetMessages, handleGroupMessage, handlePrivateMessage } from './handlers/messages';
+import { handleMarkAsRead, handleTyping } from './handlers/messageStatus';
 
 dotenv.config();
 
@@ -17,9 +17,9 @@ const app = express();
 const server = createServer(app);
 
 // cors and server for socket.io 
-const io = new Server(server,{
-    cors:{
-        origin : "*",
+const io = new Server(server, {
+    cors: {
+        origin: "*",
         methods: ["GET", "POST"],
         credentials: true
     }
@@ -43,7 +43,7 @@ app.use(express.urlencoded({
 
 
 // basic route
-app.get('/',(req,res) => {
+app.get('/', (req, res) => {
     res.json({
         message: "Chat App server is running...",
         timestamp: new Date().toISOString(),
@@ -62,8 +62,8 @@ app.use('/api/groups', groupsRoutes);
 io.use(authenticateSocket);
 
 // socket.io connection
-io.on("connection",(socket) => {
-    
+io.on("connection", (socket) => {
+
     // handle initial connection ie when user cunnects successfully
     handleConnection(io, socket);
 
@@ -98,9 +98,9 @@ io.on("connection",(socket) => {
     });
 });
 
-server.listen(PORT,() => {
+server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-  console.log(`Client URL: ${process.env.CLIENT_URL || "http://localhost:3000"}`);
-  console.log(`Node Environment: ${process.env.NODE_ENV || 'development (NODE_ENV not set)'}`);
+    console.log(`Client URL: ${process.env.CLIENT_URL || "http://localhost:3000"}`);
+    console.log(`Node Environment: ${process.env.NODE_ENV || 'development (NODE_ENV not set)'}`);
 })
 

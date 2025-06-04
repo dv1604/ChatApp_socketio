@@ -1,9 +1,9 @@
 import { Socket } from "socket.io";
-import { JWTPayload, verifyToken } from "../../utils/authUtils";
-import prisma from "../../config/database";
+import { JWTPayload, verifyToken } from "../utils/authUtils";
+import prisma from "../config/database";
 
 // include custom properties for the socket object
-export interface AuthenticatedSocket extends Socket{
+export interface AuthenticatedSocket extends Socket {
     userId?: number;
     userData?: {
         id: number;
@@ -14,7 +14,7 @@ export interface AuthenticatedSocket extends Socket{
     };
 }
 
-export const authenticateSocket = async (socket : AuthenticatedSocket , next : (err? : Error) => void) => {
+export const authenticateSocket = async (socket: AuthenticatedSocket, next: (err?: Error) => void) => {
     try {
 
         // retrieve the token from the socket handshake
@@ -50,10 +50,10 @@ export const authenticateSocket = async (socket : AuthenticatedSocket , next : (
         next()
 
     } catch (error) {
-        
+
         console.error('Socket authentication error : ', error);
         const errorMessage = error instanceof Error && error.message
-        next(new Error(errorMessage || 'Authentication Error : Invalid token'));        
+        next(new Error(errorMessage || 'Authentication Error : Invalid token'));
 
     }
 }
