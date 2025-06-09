@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { authApi } from "./authApi";
 
 interface authState {
-    user: UserDisplayInfo | null;
+    user: Omit<User , 'passwordHash'> | null;
     token: string | null;
     isAuthenticated: boolean;
     isLoading: boolean;
@@ -22,7 +22,7 @@ export const authSlice = createSlice({
     name: 'auth',
     initialState,
     reducers: {
-        setCredentials: (state, action: PayloadAction<{ user: UserDisplayInfo, token: string }>) => {
+        setCredentials: (state, action: PayloadAction<{ user: Omit<User , 'passwordHash'>, token: string }>) => {
             state.token = action.payload.token;
             state.user = action.payload.user;
             state.isAuthenticated = true;

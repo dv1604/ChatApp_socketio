@@ -28,12 +28,12 @@ export interface RegisterRequest {
     password: string;
 }
 
-export interface AuthResponse {
-    user: Pick<User, 'id' | 'username' | 'email' | 'avatarUrl' | 'createdAt'>;
-    token: string;
-};
+// export interface AuthResponse {
+//     user: Pick<User, 'id' | 'username' | 'email' | 'avatarUrl' | 'createdAt'>;
+//     token: string;
+// };
 
-export interface LoginResponse{
+export interface AuthResponse{
     user: Omit<User, 'passwordHash'>,
     token : string
 }

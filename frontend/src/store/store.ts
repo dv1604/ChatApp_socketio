@@ -5,6 +5,7 @@ import authApiReducer, { authApi } from './features/authentication/authApi';
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { persistReducer, persistStore } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
+import { rtkMiddleware } from "./middleware/rtkMiddleware";
 
 // persist configration
 const persistConfig = {
@@ -27,7 +28,8 @@ export const store = configureStore({
     middleware: (getDefaultMiddleware) => getDefaultMiddleware({
         serializableCheck: false
     }).concat(
-        authApi.middleware
+        authApi.middleware,
+        rtkMiddleware
     )
 })
 

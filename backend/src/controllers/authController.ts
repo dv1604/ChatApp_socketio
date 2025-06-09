@@ -7,11 +7,12 @@ export const createNewUser = async (req: Request, res: Response) => {
     try {
 
         const { username, email, password } = req.body;
+        console.log(username,email,password)
 
         // validate input
         if (!validateUsername(username)) {
             res.status(400).json({
-                error: 'Username must be 3-20 characters, alphanumeric'
+                error: 'Username must be 3-20 characters'
             });
             return;
         }
@@ -53,14 +54,18 @@ export const createNewUser = async (req: Request, res: Response) => {
             data: {
                 username,
                 email,
-                passwordHash: hashedPassword
+                passwordHash: hashedPassword,
+                isOnline : true
             },
             select: {
                 id: true,
                 username: true,
                 email: true,
                 avatarUrl: true,
-                createdAt: true
+                createdAt: true,
+                isOnline: true,
+                lastSeen: true,
+                updatedAt : true
             }
         });
 
@@ -113,22 +118,29 @@ export const loginUser = async (req: Request, res: Response) => {
         };
 
         // update user online status
-        await prisma.user.update({
+        const updatededUser = await prisma.user.update({
             where: { id: user.id },
             data: {
                 isOnline: true,
                 lastSeen: new Date()
+            },
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                avatarUrl: true,
+                createdAt: true,
+                isOnline: true,
+                lastSeen: true,
+                updatedAt : true
             }
         });
 
         // generate JWT token
         const token = generateToken({ userId: user.id, email: user.email });
 
-        // send user data without password
-        const { passwordHash, ...userWithoutPassword } = user
-
         res.status(200).json({
-            user: userWithoutPassword,
+            user: updatededUser,
             token
         });
 

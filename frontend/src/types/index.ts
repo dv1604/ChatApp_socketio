@@ -13,6 +13,8 @@ export interface User {
 // reusable usre info types
 export type UserBasicInfo = Pick<User, 'id' | 'username'>;
 
+export type SenderInfo = Pick<User, 'id' | 'avatarUrl' | 'username'>
+
 export type UserDisplayInfo = Pick<User, 'id' | 'username' | 'avatarUrl' | 'isOnline' | 'lastSeen'>;
 
 // authenticated user data received after login/register
@@ -33,7 +35,7 @@ export interface Message {
     isEdited: boolean;
     editedAt: string | null;
     createdAt: string;
-    sender: UserDisplayInfo; //sender relation in backend
+    sender: SenderInfo; //sender relation in backend
 }
 
 export interface MessageReadReceipt {

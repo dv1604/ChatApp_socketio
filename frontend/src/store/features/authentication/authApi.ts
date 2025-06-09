@@ -1,5 +1,5 @@
 import { RootState } from "@/store/store";
-import { AuthResponse, LoginRequest, LoginResponse, RegisterRequest } from "@/types/api";
+import { AuthResponse, LoginRequest, RegisterRequest } from "@/types/api";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { clearCredentials } from "./authSlice";
 import { UserDisplayInfo } from "@/types";
@@ -42,7 +42,7 @@ export const authApi = createApi({
     }),
 
     //login API 
-    login: builder.mutation<LoginResponse, LoginRequest>({
+    login: builder.mutation<AuthResponse, LoginRequest>({
         query: (loginData) => ({
             url: '/login',
             method: 'POST',

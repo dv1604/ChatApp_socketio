@@ -1,16 +1,18 @@
 'use client'
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import { useLoginMutation } from "@/store/features/authentication/authApi";
 import { RootState } from "@/store/store";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { MdAlternateEmail } from "react-icons/md";
 import { TbLockPassword } from "react-icons/tb";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { ApiError } from "@/types/api";
 import { FiUser } from "react-icons/fi";
+import { useRegisterMutation } from "@/store/features/authentication/authApi";
+import { setCredentials } from "@/store/features/authentication/authSlice";
+import { useRouter } from "next/navigation";
 
 export default function Register() {
 
@@ -20,8 +22,11 @@ export default function Register() {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [username, setUsername] = useState('');
     const [apiError, setApiError] = useState('');
-    const [login, { data, error }] = useLoginMutation();
+    const [register, { data, error }] = useRegisterMutation();
+    const dispatch = useDispatch();
+    const router = useRouter();
 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,6 +35,8 @@ export default function Register() {
             setEmail(value);
         } else if (name === 'password') {
             setPassword(value)
+        } else if (name === 'username') {
+            setUsername(value);
         }
     };
 
@@ -39,11 +46,13 @@ export default function Register() {
 
         try {
 
-            const response = await login({ email, password }).unwrap();
-            console.log('Login Response: ', response);
+            const response = await register({ email, password,username }).unwrap();
+            console.log('Register Response: ', response);
+            dispatch(setCredentials({ user: response.user, token: response.token }));
+            router.replace('/chat')
 
         } catch (err) {
-            console.log('Login Error : ', err);
+            console.log('Register Error : ', err);
 
             if (err && typeof err === "object" && 'data' in err) {
                 const errorData = err as ApiError;
@@ -62,7 +71,7 @@ export default function Register() {
                 <div className="max-w-ms w-[60%] relative flex flex-col items-center justify-center">
                     {/* chat app floating element */}
                     <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-10 mb-3">
-                        <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full transition-transform ease-out duration-300 hover:scale-105 shadow-[0px_10px_30px_rgba(0,0,0,0.3),_0px_5px_15px_rgba(0,0,0,0.2)]">
+                        <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-purple-700 to-blue-500 rounded-full transition-transform ease-out duration-300 hover:scale-105 shadow-[0px_10px_30px_rgba(0,0,0,0.3),_0px_5px_15px_rgba(0,0,0,0.2)]">
                             <IoChatbubbleEllipsesOutline
                                 className="text-white w-12 h-12" />
                         </div>
@@ -82,7 +91,7 @@ export default function Register() {
                                 placeholder="Enter you username"
                                 disabled={false}
                                 icon={FiUser}
-                                value={email}
+                                value={username}
                                 onChange={(handleChange)}
                             />
 

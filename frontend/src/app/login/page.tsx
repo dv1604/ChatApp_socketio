@@ -8,8 +8,10 @@ import React, { useEffect, useState } from "react";
 import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { MdAlternateEmail } from "react-icons/md";
 import { TbLockPassword } from "react-icons/tb";
-import { useSelector } from "react-redux";
-import { ApiError } from "@/types/api";
+import { useDispatch, useSelector } from "react-redux";
+import { ApiError} from "@/types/api";
+import { setCredentials } from "@/store/features/authentication/authSlice";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
 
@@ -21,6 +23,8 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [apiError, setApiError] = useState('');
     const [login, { data, error }] = useLoginMutation();
+    const dispatch = useDispatch();
+    const router = useRouter();
 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,7 +43,10 @@ export default function Login() {
         try {
 
             const response = await login({ email, password }).unwrap();
-            console.log('Login Response: ', response);
+            console.log(response);
+            dispatch(setCredentials({ user: response.user, token: response.token }));
+            router.replace('/chat')
+
 
         } catch (err) {
             console.log('Login Error : ', err);
@@ -57,11 +64,11 @@ export default function Login() {
 
     return (
         <>
-            <div className='min-h-screen flex justify-center items-center bg-gradient-to-br from-[var(--background-dark)] to-[var(--primary-dark)]/80 px-4'>
+            <div className='min-h-screen flex justify-center items-center bg-gradient-to-br from-[var(--background-dark)] to-[var(--primary-dark)]/80 px-4 '>
                 <div className="max-w-ms w-[60%] relative flex flex-col items-center justify-center">
                     {/* chat app floating element */}
                     <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-10 mb-3">
-                        <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full transition-transform ease-out duration-300 hover:scale-105 shadow-[0px_10px_30px_rgba(0,0,0,0.3),_0px_5px_15px_rgba(0,0,0,0.2)]">
+                        <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-purple-700 to-blue-500 rounded-full transition-transform ease-out duration-300 hover:scale-105 shadow-[0px_10px_30px_rgba(0,0,0,0.3),_0px_5px_15px_rgba(0,0,0,0.2)]">
                             <IoChatbubbleEllipsesOutline
                                 className="text-white w-12 h-12" />
                         </div>
@@ -82,7 +89,7 @@ export default function Login() {
                                 disabled={false}
                                 icon={MdAlternateEmail}
                                 value={email}
-                                onChange={(handleChange)}
+                                onChange={handleChange}
                             />
 
                             <Input
