@@ -81,7 +81,10 @@ export default function ChatArea() {
 
             {/* message input field */}
             <div className="p-4 border-t border-gray-700 z-10">
-                <MessageInput />
+                <MessageInput
+                    otherUserId={activeChat.id}
+                    
+                />
             </div>
 
         </div>

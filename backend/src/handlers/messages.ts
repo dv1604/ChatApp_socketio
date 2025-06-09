@@ -15,7 +15,6 @@ export const handlePrivateMessage = async (io: Server, socket: AuthenticatedSock
         }
 
         const { receiverId, content, messageType, tempId } = data;
-        console.log(data, receiverId, content)
 
         if (!receiverId || !content?.trim()) {
             socket.emit('error', {

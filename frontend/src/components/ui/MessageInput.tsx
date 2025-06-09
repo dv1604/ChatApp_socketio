@@ -4,22 +4,49 @@ import Input from "./Input"
 import Button from "./Button";
 import clsx from "clsx";
 import { resolve } from "path";
+import { getSocket } from "@/libs/socket";
+import { v4 as uuid4 } from "uuid";
+import { useDispatch } from "react-redux";
+import { addMessage } from "@/store/features/chat/chatSlice";
+import { PrivateMessageInput, SocketEvents } from "@/types/socketEvents";
 
-export default function MessageInput() {
+export default function MessageInput({
+    otherUserId
+}: {
+    otherUserId: string
+}) {
     const [messageContent, setMessageContent] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const dispatch = useDispatch();
 
-    const handleSendMessage = async(e : React.FormEvent) => {
+    const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (messageContent.trim() === '') return;
 
+        if (!otherUserId) alert("Give recieverId");
+
         setIsLoading(true);
         console.log('Sending Message:', messageContent);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const socket = getSocket();
+        const tempId = uuid4();
+        // await new Promise(resolve => setTimeout(resolve, 500));
+
+        const message: PrivateMessageInput = {
+            receiverId: parseInt("2"),
+            content: messageContent,
+            messageType: "TEXT",
+            tempId
+        }
+
+        // dispatch(addMessage())
+        socket?.emit("private_message", message);
+
+        
+
+        console.log("Sent Message to ", otherUserId);
 
         setMessageContent('');
         setIsLoading(false);
-        console.log('Message Sent');
     }
 
     return (
@@ -35,10 +62,10 @@ export default function MessageInput() {
                     className={clsx("block rounded-lg border px-3 py-2.5 text-sm transition-all duration-200 bg-background-dark/50 text-gray-100 placeholder-gray-400 border-gray-700 min-h-[1rem] resize-none disabled:bg-gray-700/30 disabled:text-gray-500 disabled:cursor-not-allowed disabled:border-gray-700 bg-[var(--background-dark)]/50 focus:border-[#42a5f5] focus:ring-[#42a5f5]/20 w-full"
                     )}
                     onInput={(e) => {
-                            const textarea = e.target as HTMLTextAreaElement;
-                            textarea.style.height = 'auto'; // Reset height
-                            textarea.style.height = `${textarea.scrollHeight}px`; // Set to scroll height
-                        }}
+                        const textarea = e.target as HTMLTextAreaElement;
+                        textarea.style.height = 'auto'; // Reset height
+                        textarea.style.height = `${textarea.scrollHeight}px`; // Set to scroll height
+                    }}
                 />
             </div>
             <Button

@@ -11,7 +11,7 @@ if (process.env.NODE_ENV === "production") {
     if (!global.__prisma) {
         global.__prisma = new PrismaClient({
             // log databse related events
-            log: ['query', 'info', 'warn', 'error']
+            // log: ['query', 'info', 'warn', 'error']
         });
     }
     // if __prisma exists then assign it to prisma

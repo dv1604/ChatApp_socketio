@@ -69,7 +69,8 @@ io.on("connection", (socket) => {
 
     // listen for private messages
     socket.on('private_message', (data) => {
-        handlePrivateMessage(io, socket, JSON.parse(data))
+        // console.log(data)
+        handlePrivateMessage(io, socket, data)
     });
 
     // listen for group messages

@@ -29,6 +29,13 @@ export interface SocketEvents {
     // }) => void;
 }
 
+export interface PrivateMessageInput {
+    receiverId: number;
+    content: string;
+    messageType?: MessageType;
+    tempId: string;
+}
+
 // define tha data received from the server
 export interface SocketListeners {
     private_message: (message: Message) => void;

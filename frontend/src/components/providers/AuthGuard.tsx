@@ -1,4 +1,5 @@
 "use client"
+import { connectSocket } from "@/libs/socket";
 import { RootState } from "@/store/store";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -9,7 +10,7 @@ export default function AuthGuard({
 }: {
     children: React.ReactNode;
 }) {
-    const { isAuthenticated } = useSelector((state: RootState) => {
+    const { isAuthenticated , token } = useSelector((state: RootState) => {
         return state.auth
     });
     const router = useRouter();
@@ -36,6 +37,7 @@ export default function AuthGuard({
                 setIsAuthorized(false);
             } else if (isAuthenticated && (pathname === '/login' || pathname === '/register')) {
                 router.replace('/chat');
+
                 setIsAuthorized(false);
             } else if (!isAuthenticated && publicRoutes.includes(pathname)) {
                 // User is on public route and not authenticated - allow
@@ -53,6 +55,15 @@ export default function AuthGuard({
             }
         }
     }, [isAuthenticated, isHydrated, pathname, router]);
+
+    useEffect(() => {
+
+        if (token) {
+            connectSocket(token);
+            
+        }
+
+    },[token])
 
     // Show loading while hydrating or while redirecting
     if (!isHydrated || !isAuthorized) {
