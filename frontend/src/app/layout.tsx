@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ReduxProvider from "@/components/providers/ReduxProvider";
 import { ToastContainer } from "react-toastify";
+import AuthGuard from "@/components/providers/AuthGuard";
 
 export const metadata: Metadata = {
   title: "Realtime Chat App",
@@ -19,9 +20,11 @@ export default function RootLayout({
         className={`font-sans antialiased bg-gradient-to-br from-[var(--background-dark)] to-[var(--primary-dark)]/80 min-h-screen`}
       >
         <ReduxProvider>
-          <div className="">
-            {children}
-          </div>
+          <AuthGuard>
+            <div className="">
+              {children}
+            </div>
+          </AuthGuard>
         </ReduxProvider>
         <ToastContainer
           position="top-right"
