@@ -1,12 +1,14 @@
 "use client"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Button from "./Button";
 import clsx from "clsx";
 import { getSocket } from "@/libs/socket";
 import { v4 as uuid4 } from "uuid";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { PrivateMessageInput} from "@/types/socketEvents";
 import { addMessage } from "@/store/features/chat/chatSlice";
+import { ConversationMessages } from "@/types/socketEvents";
+import { RootState } from "@/store/store";
 
 export default function MessageInput({
     otherUserId , convId
@@ -17,19 +19,20 @@ export default function MessageInput({
     const [messageContent, setMessageContent] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const dispatch = useDispatch();
+    
+    const { user: currentUser } = useSelector((state: RootState) => state.auth);
+    const socket = getSocket();
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (messageContent.trim() === '') return;
-
         if (!otherUserId) alert("Give recieverId");
 
         setIsLoading(true);
         console.log('Sending Message:', messageContent);
-        const socket = getSocket();
+        
         const tempId = uuid4();
-        // await new Promise(resolve => setTimeout(resolve, 500));
-
+        
         const message: PrivateMessageInput = {
             receiverId: otherUserId,
             content: messageContent,
@@ -37,11 +40,8 @@ export default function MessageInput({
             tempId
         }
 
-        // dispatch(addMessage())
         socket?.emit("private_message", message);
-
         
-
         console.log("Sent Message to ", otherUserId);
 
         setMessageContent('');

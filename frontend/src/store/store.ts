@@ -6,6 +6,7 @@ import { setupListeners } from "@reduxjs/toolkit/query";
 import { persistReducer, persistStore } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import { rtkMiddleware } from "./middleware/rtkMiddleware";
+import  userApiReducer , { userApi } from "./features/users/userApi";
 
 // persist configration
 const persistConfig = {
@@ -17,6 +18,7 @@ const persistConfig = {
 const rootReducer = combineReducers({
     chat: chatReducer,
     auth: authReducer,
+    [userApi.reducerPath] : userApiReducer,
     [authApi.reducerPath] : authApiReducer
 })
 
@@ -28,8 +30,10 @@ export const store = configureStore({
     middleware: (getDefaultMiddleware) => getDefaultMiddleware({
         serializableCheck: false
     }).concat(
+        rtkMiddleware,
         authApi.middleware,
-        rtkMiddleware
+        userApi.middleware
+        
     )
 })
 

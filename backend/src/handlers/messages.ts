@@ -79,7 +79,10 @@ export const handlePrivateMessage = async (io: Server, socket: AuthenticatedSock
             createdAt: message.createdAt.toISOString(),
         };
 
-        await broadcastMessage(io, conversation.id, messageData, socket.userId);
+        const userIds = [receiverId, socket.userId];
+        userIds.forEach(userId => {
+            io.to(`user_${userId}`).emit('private_message', message);
+        });
 
         socket.emit('message_emit', {
             id: message.id,

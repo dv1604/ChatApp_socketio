@@ -7,6 +7,16 @@ const pendingToasts: Record<string, Id> = {};
 
 export const rtkMiddleware: Middleware = (store: MiddlewareAPI<AppDispatch>) => (next) => (action) => {
 
+    if (typeof action === 'object' && action !== null && 'type' in action) {
+        const actionType = action.type as string;
+
+        if(
+            actionType.includes('users')
+        ) {
+            return next(action);
+        }
+    }
+
     if (isPending(action)) {
         const toastId = toast.loading('Loading...');
         console.log(toastId,action);

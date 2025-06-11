@@ -39,7 +39,7 @@ export const broadcastMessage = async (io: Server, conversationId: number, messa
 
         if (!conversation) return;
 
-        const userIds = [conversation.user1Id, conversation.user2Id].filter(id => id !== senderId);
+        const userIds = [conversation.user1Id, conversation.user2Id];
         userIds.forEach(userId => {
             io.to(`user_${userId}`).emit('private_message', message);
         });
