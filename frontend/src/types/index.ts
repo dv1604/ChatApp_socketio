@@ -25,7 +25,7 @@ export type AuthUser = Pick<User, 'id' | 'username' | 'email' | 'avatarUrl'> & {
 export type MessageType = 'TEXT' | 'IMAGE' | 'FILE' | 'SYSTEM';
 
 export interface Message {
-    id: string;
+    id: number;
     senderId: string;
     content: string;
     messageType: MessageType;
@@ -91,15 +91,22 @@ export interface Group {
 // to differ chat acc to type
 export interface ChatItem {
     id: string;
-    type: 'conversation';
     name: string;
     lastMessage?: Message;
     lastMessageAt?: string;
-    unreadCount?: number;
+    // unreadCount?: number;
     isOnline?: boolean;
     avatarUrl?: string | null;
-    participants?: UserDisplayInfo[]; //list of all member's details
+    // participants?: UserDisplayInfo[]; //list of all member's details
     otherUser?: UserDisplayInfo;
+}
+
+export interface ActiveChatUser{
+    userId: number;
+    convId: number;
+    username: string;
+    isOnline: boolean;
+    avatarUrl : string | null
 }
 
 

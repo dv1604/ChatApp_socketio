@@ -1,33 +1,5 @@
-import { Conversation, Group, Message, MessageType, User, UserBasicInfo, UserDisplayInfo } from ".";
+import { Conversation, Group, Message, MessageType, SenderInfo, User, UserBasicInfo, UserDisplayInfo } from ".";
 
-// define events emitted to the server by socket.io
-export interface SocketEvents {
-    private_message: (data: {
-        receiverId: string;
-        content: string;
-        messageType?: MessageType;
-        tempId: string;
-    }) => void;
-    // group_message: (data: {
-    //     groupId: string;
-    //     content: string;
-    //     messageType?: MessageType;
-    //     tempId: string;
-    // }) => void;
-    get_messages: (data: {
-        conversationId?: string;
-        groupId?: string;
-        limit: number;
-        offset: number;
-    }) => void;
-    // typing: (data: {
-    //     chatId: string;
-    //     isTyping: boolean;
-    // }) => void;
-    // mark_as_read: (data: {
-    //     messageId: string;
-    // }) => void;
-}
 
 export interface PrivateMessageInput {
     receiverId: number;
@@ -36,6 +8,31 @@ export interface PrivateMessageInput {
     tempId: string;
 }
 
+export interface UserConversations {
+    id: number;
+    lastMessage: {
+        content: string,
+        createdAt: string;
+        id: number;
+        senderId: number;
+        senderUsername: string;
+    };
+    otherUser: Pick<User, 'avatarUrl' | 'id' | 'isOnline' | 'username'>;
+};
+
+export interface MessageLoaded {
+    conversationId: number;
+    messages: {
+        id: number,
+        content: string,
+        messageType: MessageType,
+        sender: SenderInfo,
+        createdAt: string
+    },
+    hasMore: boolean
+}
+
+export type ConversationMessages = Pick<Message, 'content' | 'createdAt' | 'id' | 'sender' | 'messageType'>;
 // define tha data received from the server
 export interface SocketListeners {
     private_message: (message: Message) => void;

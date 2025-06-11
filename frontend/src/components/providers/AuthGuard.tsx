@@ -56,14 +56,7 @@ export default function AuthGuard({
         }
     }, [isAuthenticated, isHydrated, pathname, router]);
 
-    useEffect(() => {
-
-        if (token) {
-            connectSocket(token);
-            
-        }
-
-    },[token])
+    
 
     // Show loading while hydrating or while redirecting
     if (!isHydrated || !isAuthorized) {

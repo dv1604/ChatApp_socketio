@@ -1,19 +1,18 @@
 "use client"
 import { useState } from "react"
-import Input from "./Input"
 import Button from "./Button";
 import clsx from "clsx";
-import { resolve } from "path";
 import { getSocket } from "@/libs/socket";
 import { v4 as uuid4 } from "uuid";
 import { useDispatch } from "react-redux";
+import { PrivateMessageInput} from "@/types/socketEvents";
 import { addMessage } from "@/store/features/chat/chatSlice";
-import { PrivateMessageInput, SocketEvents } from "@/types/socketEvents";
 
 export default function MessageInput({
-    otherUserId
+    otherUserId , convId
 }: {
-    otherUserId: string
+        otherUserId: number;
+    convId : number
 }) {
     const [messageContent, setMessageContent] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +31,7 @@ export default function MessageInput({
         // await new Promise(resolve => setTimeout(resolve, 500));
 
         const message: PrivateMessageInput = {
-            receiverId: parseInt("2"),
+            receiverId: otherUserId,
             content: messageContent,
             messageType: "TEXT",
             tempId

@@ -4,6 +4,7 @@ import clsx from "clsx";
 import Avatar from "./Avatar";
 import { useState } from "react";
 import { formatMessageTime } from "@/utils/formattedTime";
+import { ConversationMessages } from "@/types/socketEvents";
 
 export default function MessageBubble({
     message,
@@ -12,7 +13,7 @@ export default function MessageBubble({
     currentUserAvatar,
     otherUserAvatar
 }: {
-    message: Message,
+    message: ConversationMessages,
     isSentByCurrentUser: boolean,
     additionalClass?: string,
     currentUserAvatar: string | null,
@@ -25,7 +26,7 @@ export default function MessageBubble({
 
     return (
         <div className={clsx(
-            "flex items-end gap-2 group mb-1",
+            "flex items-end gap-2 group mb-3.5 ",
             isSentByCurrentUser ? "justify-end" : "justify-start"
         )}
         >

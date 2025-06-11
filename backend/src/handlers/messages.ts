@@ -222,6 +222,8 @@ export const handleGetMessages = async (socket: AuthenticatedSocket, data: getMe
             skip: offset
         });
 
+        console.log(messages)
+
         socket.emit('messages_loaded', {
             conversationId,
             messages: messages.reverse().map(msg => ({
@@ -230,7 +232,7 @@ export const handleGetMessages = async (socket: AuthenticatedSocket, data: getMe
                 messageType: msg.messageType,
                 sender: {
                     id: msg.sender.id,
-                    username: msg.sender.avatarUrl,
+                    username: msg.sender.username,
                     avatarUrl: msg.sender.avatarUrl
                 },
                 createdAt: msg.createdAt

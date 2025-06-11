@@ -47,7 +47,7 @@ export default function Avatar({
     const sizeConfig = {
     sm: {
       container: 'h-7 w-7',
-      text: 'text-sm',
+      text: 'text-xs',
       online: 'h-2.5 w-2.5',
     },
     md: {
@@ -59,7 +59,7 @@ export default function Avatar({
 
     // Base classes without size, then default size, then additional classes for override
     const styling = clsx(
-        "relative inline-flex items-center justify-center rounded-full flex-shrink-0",
+        "relative inline-flex items-center  justify-center rounded-full flex-shrink-0",
         sizeConfig[size].container,
         additionalClass,
 
@@ -82,7 +82,7 @@ export default function Avatar({
             
             {/* show initials if no avatar is given */}
             {showPlaceholder && (
-                <div className={`absolute inset-0 flex items-center justify-center text-white font-medium ${initialColor} text-sm rounded-full`}>
+                <div className={`absolute inset-0 flex items-center justify-center text-white font-medium ${initialColor} ${sizeConfig[size].text} rounded-full`}>
                     {initials}
                 </div>
             )}
