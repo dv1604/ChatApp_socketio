@@ -17,12 +17,12 @@ const baseQuery = fetchBaseQuery({
 });
 
 // wrapper to handle baseQuery for 401 unauthorized status
-const baseQueryWithReauth : typeof baseQuery = async (args,api,extraOptions) => {
+const baseQueryWithReauth: typeof baseQuery = async (args, api, extraOptions) => {
     let result = await baseQuery(args, api, extraOptions);
 
     if (result.error && result.error.status === 401) {
         console.warn('AUthentication error : Token expired or invalid . Logging out...');
-        
+
         api.dispatch(clearCredentials());
     }
     return result;
@@ -32,23 +32,26 @@ const baseQueryWithReauth : typeof baseQuery = async (args,api,extraOptions) => 
 export const authApi = createApi({
     reducerPath: 'authApi',
     baseQuery: baseQueryWithReauth,
+    tagTypes: ["Auth"],
     endpoints: (builder) => ({
         register: builder.mutation<AuthResponse, RegisterRequest>({
             query: (registerData) => ({
                 url: '/register',
                 method: 'POST',
                 body: registerData
-            })
-    }),
+            }),
+            invalidatesTags: ["Auth"]
+        }),
 
-    //login API 
-    login: builder.mutation<AuthResponse, LoginRequest>({
-        query: (loginData) => ({
-            url: '/login',
-            method: 'POST',
-            body: loginData
-        })
-    }),
+        //login API 
+        login: builder.mutation<AuthResponse, LoginRequest>({
+            query: (loginData) => ({
+                url: '/login',
+                method: 'POST',
+                body: loginData
+            }),
+            invalidatesTags: ["Auth"]
+        }),
 
         // logout API
         logout: builder.mutation<{ message: string }, void>({
@@ -59,15 +62,30 @@ export const authApi = createApi({
         }),
 
         // get logged in users details
-        getCurrentUser: builder.query<UserDisplayInfo,void>({
+        getCurrentUser: builder.query<UserDisplayInfo, void>({
             query: () => ({
                 url: '/me',
-                method : 'GET'
+                method: 'GET'
             })
+        }),
+
+        verifyToken: builder.query<{ verified: boolean }, string>({
+            query: (token) => {
+
+                const params = new URLSearchParams();
+
+                if (token) params.append('token', token);
+
+                return {
+                    url: `/verify?${params.toString()}`,
+                    method: 'GET'
+                }
+            },
+            providesTags: ["Auth"]
         })
     })
 })
 
-export const { useLoginMutation, useLogoutMutation, useRegisterMutation , useGetCurrentUserQuery} = authApi;
+export const { useLoginMutation, useLogoutMutation, useRegisterMutation, useGetCurrentUserQuery, useLazyVerifyTokenQuery } = authApi;
 
 export default authApi.reducer;

@@ -1,6 +1,6 @@
 import { useDispatch } from "react-redux";
 import Avatar from "./Avatar";
-import { setActiveChat } from "@/store/features/chat/chatSlice";
+import { setActiveChat, setChatLoader } from "@/store/features/chat/chatSlice";
 import { UserConversations } from "@/types/socketEvents";
 import { getSocket } from "@/libs/socket";
 
@@ -27,7 +27,8 @@ export default function ChatListItem({
             username
         }));
 
-        socket?.emit('get_messages', {conversationId : conversationInfo.id});
+        socket?.emit('get_messages', { conversationId: conversationInfo.id });
+        dispatch(setChatLoader(true));
 
     }
 

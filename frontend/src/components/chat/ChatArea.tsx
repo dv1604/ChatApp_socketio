@@ -8,9 +8,9 @@ import { Message, MessageType, UserDisplayInfo } from '../../types/index'
 import MessageInput from "../ui/MessageInput";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getSocket } from "@/libs/socket";
-import { selectAllMessages, setUserMessages, addMessage } from "@/store/features/chat/chatSlice";
+import { selectAllMessages, setUserMessages, addMessage, setChatLoader } from "@/store/features/chat/chatSlice";
 
 export default function ChatArea() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -19,13 +19,15 @@ export default function ChatArea() {
         return state.auth
     });
 
-    const { activeChat} = useSelector((state: RootState) => {
+    const { activeChat , isLoadingChatData} = useSelector((state: RootState) => {
         return state.chat
     });
+    const [isLoading,setIsLoading] = useState<boolean>(true);
     const dispatch = useDispatch();
 
     useEffect(() => {
         const socket = getSocket();
+
 
         // Load past messages
         socket?.on("messages_loaded", (pastMessages) => {
@@ -90,7 +92,12 @@ export default function ChatArea() {
 
             {/* Scrollable Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {messages.length === 0 ? (
+                {isLoadingChatData ?
+                    <div className="flex items-center justify-center h-full">
+                        <div className="h-8 w-8 rounded-full border-2 border-gray-500 border-t-transparent animate-spin"></div>
+                    </div>
+                    : (
+                        messages.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-gray-400">
                         <p>No messages yet. Start the conversation!</p>
                     </div>
@@ -108,7 +115,7 @@ export default function ChatArea() {
                         {/* Invisible div to scroll to */}
                         <div ref={messagesEndRef} />
                     </>
-                )}
+                ))}
             </div>
 
             {/* Fixed Message Input Field */}

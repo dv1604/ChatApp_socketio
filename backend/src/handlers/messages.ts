@@ -6,11 +6,9 @@ import { broadcastMessage, findOrCreateConversation } from "../utils/messageUtil
 import { getMessagesData, groupMessageData, privateMessageData } from "../types/message";
 
 export const handlePrivateMessage = async (io: Server, socket: AuthenticatedSocket, data: privateMessageData) => {
-
     try {
-
         if (!socket.userId || !socket.userData) {
-            socket.emit('error', { message: 'AUthentication required to send message' });
+            socket.emit('error', { message: 'Authentication required to send message' });
             return;
         }
 
@@ -18,31 +16,41 @@ export const handlePrivateMessage = async (io: Server, socket: AuthenticatedSock
 
         if (!receiverId || !content?.trim()) {
             socket.emit('error', {
-                message: 'Invalid message data : recieverId and content are required'
+                message: 'Invalid message data : receiverId and content are required'
             });
             return;
         }
 
-        // get username of reciever from user table
+        // Get receiver info
         const receiver = await prisma.user.findUnique({
-            where: {
-                id: receiverId
-            },
+            where: { id: receiverId },
             select: {
                 id: true,
-                username: true
+                username: true,
+                avatarUrl: true,
+                isOnline: true
             }
         });
 
         if (!receiver) {
-            socket.emit('error', {
-                message: 'Receiver not found.'
-            });
+            socket.emit('error', { message: 'Receiver not found.' });
             return;
         }
 
+        // Check if conversation already exists
+        const existingConversation = await prisma.conversation.findFirst({
+            where: {
+                OR: [
+                    { user1Id: socket.userId, user2Id: receiverId },
+                    { user1Id: receiverId, user2Id: socket.userId }
+                ]
+            }
+        });
+
+        const isNewConversation = !existingConversation;
         const conversation = await findOrCreateConversation(socket.userId, receiverId);
 
+        // Create the message
         const message = await prisma.message.create({
             data: {
                 senderId: socket.userId,
@@ -61,6 +69,7 @@ export const handlePrivateMessage = async (io: Server, socket: AuthenticatedSock
             }
         });
 
+        // Update conversation last message time
         await prisma.conversation.update({
             where: { id: conversation.id },
             data: { lastMessageAt: new Date() }
@@ -79,12 +88,56 @@ export const handlePrivateMessage = async (io: Server, socket: AuthenticatedSock
             createdAt: message.createdAt.toISOString(),
         };
 
+        // If this is a new conversation, emit conversation_created event
+        if (isNewConversation) {
+            const conversationData = {
+                id: conversation.id,
+                otherUser: {
+                    id: receiver.id.toString(),
+                    username: receiver.username,
+                    avatarUrl: receiver.avatarUrl,
+                    isOnline: receiver.isOnline
+                },
+                lastMessage: {
+                    id: message.id,
+                    content: message.content,
+                    createdAt: message.createdAt.toISOString(),
+                    senderId: message.senderId,
+                    senderUsername: message.sender.username
+                }
+            };
+
+            // Send conversation data to sender
+            socket.emit('conversation_created', {
+                ...conversationData,
+                otherUser: {
+                    id: receiver.id.toString(),
+                    username: receiver.username,
+                    avatarUrl: receiver.avatarUrl,
+                    isOnline: receiver.isOnline
+                }
+            });
+
+            // Send conversation data to receiver
+            io.to(`user_${receiverId}`).emit('conversation_created', {
+                ...conversationData,
+                otherUser: {
+                    id: socket.userId.toString(),
+                    username: socket.userData.username,
+                    avatarUrl: socket.userData.avatarUrl,
+                    isOnline: true
+                }
+            });
+        }
+
+        // Emit the message to both users
         const userIds = [receiverId, socket.userId];
         userIds.forEach(userId => {
-            io.to(`user_${userId}`).emit('private_message', message);
+            io.to(`user_${userId}`).emit('private_message', messageData);
         });
 
-        socket.emit('message_emit', {
+        // Confirm message sent to sender
+        socket.emit('message_sent', {
             id: message.id,
             conversationId: conversation.id,
             createdAt: message.createdAt.toISOString(),
@@ -92,7 +145,6 @@ export const handlePrivateMessage = async (io: Server, socket: AuthenticatedSock
         });
 
     } catch (error) {
-
         console.error('Private message error: ', error);
         socket.emit('error', { message: 'Failed to send message' });
     }

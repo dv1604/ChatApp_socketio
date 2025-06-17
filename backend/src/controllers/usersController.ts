@@ -1,11 +1,12 @@
 import { Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 import prisma from "../config/database";
+import { verifyToken } from "../utils/authUtils";
 
 export const getUsers = async (req: Request, res: Response) => {
-    
+
     try {
-        
+
         const { search, limit, offset } = req.query;
         const take = parseInt(limit as string) || 20;
         const skip = parseInt(offset as string) || 0;
@@ -58,7 +59,7 @@ export const getUsers = async (req: Request, res: Response) => {
 export const getUserById = async (req: Request, res: Response) => {
 
     try {
-    
+
         const userId = parseInt(req.params.id);
 
         if (isNaN(userId)) {
@@ -91,10 +92,66 @@ export const getUserById = async (req: Request, res: Response) => {
         res.status(200).json(user);
 
     } catch (error) {
-        
+
 
         console.error('Error fetching user by ID:', error);
-        res.status(500).json({ error: 'Internal server error fetching user.' });       
+        res.status(500).json({ error: 'Internal server error fetching user.' });
 
+    }
+};
+
+// Keep your verifyToken as is, just catch the error
+export const verifyUser = async (req: Request, res: Response) => {
+    try {
+        const { token } = req.query as {token: string};
+
+        if (!token) {
+            res.status(400).json({
+                error: "Token is required for verification!!",
+                verified: false
+            });
+            return;
+        }
+
+        try {
+            // verify token - this might throw an error
+            const decoded = verifyToken(token);
+            
+            // If we reach here, token is valid
+            res.status(200).json({
+                verified: true
+            });
+
+        } catch (tokenError) {
+            // Handle specific token errors
+            const errorMessage = tokenError && typeof tokenError === 'object' && 'message' in tokenError && tokenError.message;
+
+            if (errorMessage === 'Token has expired') {
+                res.status(401).json({
+                    error: "Token has expired",
+                    verified: false,
+                    expired: true
+                });
+            } else if (errorMessage === 'Invalid Token') {
+                res.status(401).json({
+                    error: "Invalid token",
+                    verified: false,
+                    expired: false
+                });
+            } else {
+                res.status(401).json({
+                    error: "Token verification failed",
+                    verified: false,
+                    expired: false
+                });
+            }
+        }
+
+    } catch (error) {
+        console.log("Error while verifying token:", error);
+        res.status(500).json({
+            error: 'Internal server error verifying user',
+            verified: false
+        });
     }
 }

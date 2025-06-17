@@ -33,10 +33,7 @@ export default function Chat() {
                 console.log('Connected to socket ID', currentSocket.id);
             });
 
-            currentSocket?.on('conversations_list', (conversations) => {
-                console.log("Users past conversations list:", conversations);
-                dispatch(setIntitalChatData(conversations));
-            })
+            
 
         }
 

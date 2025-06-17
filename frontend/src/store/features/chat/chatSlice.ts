@@ -69,25 +69,29 @@ export const chatSlice = createSlice({
             state.hasMoreMessages = true;
         },
 
+        // In your chat slice, update the addMessage reducer
         addMessage: (state, action: PayloadAction<{ convId: number, message: ConversationMessages }>) => {
-            if (state.activeChat &&
-                (action.payload.convId && action.payload.convId === state.activeChat.convId)) {
-
+            // Add message to current chat if it matches
+            if (state.activeChat && action.payload.convId === state.activeChat.convId) {
                 messagesAdapter.addOne(state.messages, action.payload.message);
             }
 
-            conversationAdapter.updateOne(state.conversations, {
-                id: action.payload.convId!,
-                changes: {
-                    lastMessage: {
-                        id: action.payload.message.id,
-                        content: action.payload.message.content,
-                        createdAt: action.payload.message.createdAt,
-                        senderId: parseInt(action.payload.message.sender.id),
-                        senderUsername: action.payload.message.sender.username
+            // Update conversation in the list if it exists
+            const existingConv = state.conversations.entities[action.payload.convId];
+            if (existingConv) {
+                conversationAdapter.updateOne(state.conversations, {
+                    id: action.payload.convId,
+                    changes: {
+                        lastMessage: {
+                            id: action.payload.message.id,
+                            content: action.payload.message.content,
+                            createdAt: action.payload.message.createdAt,
+                            senderId: parseInt(action.payload.message.sender.id),
+                            senderUsername: action.payload.message.sender.username
+                        }
                     }
-                }
-            })
+                });
+            }
         },
 
         updateMessage: (state, action: PayloadAction<{
@@ -146,6 +150,7 @@ export const chatSlice = createSlice({
 
         setUserMessages: (state, action: PayloadAction<ConversationMessages>) => {
             messagesAdapter.setAll(state.messages, action.payload);
+            state.isLoadingChatData = false;
         },
 
         setIntitalChatData: (state, action: PayloadAction<{
@@ -159,11 +164,15 @@ export const chatSlice = createSlice({
             conversationAdapter.addOne(state.conversations, action.payload);
         },
 
+        setChatLoader: (state, action: PayloadAction<boolean>) => {
+            state.isLoadingChatData = action.payload;
+        },
+
         resetChatState: () => initialState,
     }
 })
 
-export const { addConversation, resetChatState, addMessages, setActiveChat, setIntitalChatData, setOnlineUsers, updateMessage, setUserMessages , addMessage } = chatSlice.actions;
+export const { addConversation, resetChatState, addMessages, setActiveChat, setIntitalChatData, setOnlineUsers, updateMessage, setUserMessages, addMessage , setChatLoader} = chatSlice.actions;
 
 export const { selectById: selectConversationById, selectAll: selectAllConversations } = conversationAdapter.getSelectors((state: RootState) => state.chat.conversations);
 
