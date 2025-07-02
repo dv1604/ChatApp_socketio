@@ -8,6 +8,7 @@ export const handleTyping = (io: Server, socket: AuthenticatedSocket, data: typi
     if (!socket.userId || !socket.userData) return;
 
     const { conversationId, isTyping } = data;
+    console.log(data)
 
     if (!conversationId) return;
 

@@ -20,11 +20,15 @@ export default function ChatListItem({
         const socket = getSocket();
         
         dispatch(setActiveChat({
-            userId: parseInt(userId),
+            currentUserRole : 'user',
+            activeChat: {
+                userId: parseInt(userId),
             avatarUrl,
             isOnline,
             convId: conversationInfo.id,
             username
+            }
+            
         }));
 
         socket?.emit('get_messages', { conversationId: conversationInfo.id });
@@ -44,6 +48,7 @@ export default function ChatListItem({
                 src={avatarUrl}
                 isOnline={isOnline}
                 size="md"
+                role="user"
             />
 
             <div className="flex-grow">

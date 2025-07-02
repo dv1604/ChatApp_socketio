@@ -44,6 +44,12 @@ interface chatState {
     isSendingMessage: boolean;
     // flag that chat has more messages that can be loaded
     hasMoreMessages: boolean;
+    // flag to indicate if chatbot is active
+    isChatbotActive: boolean;
+    // current user role in the chat , 'user' or 'chatbot'
+    currentUserRole : 'user'|'chatbot';
+    // AI conversation history for context
+    aiConversationHistory: Array<{role: 'user' | 'assistant', content: string}>;
 };
 
 const initialState: chatState = {
@@ -55,18 +61,27 @@ const initialState: chatState = {
     // typingUsers: {},
     isLoadingChatData: true,
     isSendingMessage: false,
-    hasMoreMessages: true
+    hasMoreMessages: true,
+    isChatbotActive: false,
+    currentUserRole : 'user',
+    aiConversationHistory: []
 };
 
 export const chatSlice = createSlice({
     name: 'chat',
     initialState,
     reducers: {
-        setActiveChat: (state, action: PayloadAction<ActiveChatUser | null>) => {
-            state.activeChat = action.payload;
+        setActiveChat: (state, action: PayloadAction<{currentUserRole ?: 'user' | 'chatbot', activeChat :ActiveChatUser | null}>) => {
+            state.activeChat = action.payload.activeChat;
             // when we change chat we need to clear hasMoreMessages as well as empty messages array
             messagesAdapter.removeAll(state.messages);
             state.hasMoreMessages = true;
+            state.currentUserRole = action.payload.currentUserRole || 'user';
+            
+            // For AI chat, set loading to false immediately since there are no messages to load
+            if (action.payload.currentUserRole === 'chatbot') {
+                state.isLoadingChatData = false;
+            }
         },
 
         // In your chat slice, update the addMessage reducer
@@ -76,9 +91,9 @@ export const chatSlice = createSlice({
                 messagesAdapter.addOne(state.messages, action.payload.message);
             }
 
-            // Update conversation in the list if it exists
+            // Update conversation in the list if it exists and it's not an AI message
             const existingConv = state.conversations.entities[action.payload.convId];
-            if (existingConv) {
+            if (existingConv && action.payload.message.sender.id !== "ai") {
                 conversationAdapter.updateOne(state.conversations, {
                     id: action.payload.convId,
                     changes: {
@@ -106,41 +121,7 @@ export const chatSlice = createSlice({
             messagesAdapter.addMany(state.messages, action.payload.messages);
             state.hasMoreMessages = action.payload.hasMore
         },
-
-        // setUserOnlineStatus: (state, action: PayloadAction<{
-        //     userId: string, isOnline: boolean,
-        //     lastSeen?: string, avatarUrl?: string | null, username?: string
-        // }>) => {
-        //     const {
-        //         userId, isOnline,
-        //         lastSeen, avatarUrl, username } = action.payload
-        //     if (state.onlineUsers[userId]) {
-        //         state.onlineUsers[userId].isOnline = isOnline;
-        //         if (lastSeen) state.onlineUsers[userId].lastSeen = lastSeen;
-        //         if (avatarUrl !== undefined) state.onlineUsers[userId].avatarUrl = avatarUrl;
-        //         if (username) state.onlineUsers[userId].username = username;
-        //     } else if (isOnline && username) {
-        //         state.onlineUsers[userId] = { id: userId, username, avatarUrl: avatarUrl || null, isOnline: true, lastSeen: lastSeen || new Date().toISOString() };
-        //     };
-
-        //     state.conversations.ids.forEach(convId => {
-        //         const conversation = state.conversations.entities[convId];
-        //         if (conversation) {
-        //             let targetUser: UserDisplayInfo | undefined;
-        //             if (conversation.user1.id === userId) {
-        //                 targetUser = conversation.user1;
-        //             } else if (conversation.user2.id === userId) {
-        //                 targetUser = conversation.user2;
-        //             }
-
-        //             if (targetUser) {
-        //                 targetUser.isOnline = isOnline;
-        //                 if (lastSeen) targetUser.lastSeen = lastSeen;
-        //             }
-        //         }
-        //     })
-        // },
-
+        
         setOnlineUsers: (state, action: PayloadAction<UserDisplayInfo[]>) => {
             state.onlineUsers = action.payload.reduce((acc, user) => {
                 acc[user.id] = { ...user, isOnline: true }
@@ -168,11 +149,24 @@ export const chatSlice = createSlice({
             state.isLoadingChatData = action.payload;
         },
 
+        setChatbotStatus: (state, action: PayloadAction<boolean>) => {
+            state.isChatbotActive = action.payload;
+        },
+
+        // AI conversation history management
+        addToAIHistory: (state, action: PayloadAction<{role: 'user' | 'assistant', content: string}>) => {
+            state.aiConversationHistory.push(action.payload);
+        },
+
+        clearAIHistory: (state) => {
+            state.aiConversationHistory = [];
+        },
+
         resetChatState: () => initialState,
     }
 })
 
-export const { addConversation, resetChatState, addMessages, setActiveChat, setIntitalChatData, setOnlineUsers, updateMessage, setUserMessages, addMessage , setChatLoader} = chatSlice.actions;
+export const { addConversation, resetChatState, addMessages, setActiveChat, setIntitalChatData, setOnlineUsers, updateMessage, setUserMessages, addMessage , setChatLoader , setChatbotStatus, addToAIHistory, clearAIHistory} = chatSlice.actions;
 
 export const { selectById: selectConversationById, selectAll: selectAllConversations } = conversationAdapter.getSelectors((state: RootState) => state.chat.conversations);
 

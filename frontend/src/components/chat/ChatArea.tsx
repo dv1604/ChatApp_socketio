@@ -10,7 +10,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { useEffect, useRef, useState } from "react";
 import { getSocket } from "@/libs/socket";
-import { selectAllMessages, setUserMessages, addMessage, setChatLoader } from "@/store/features/chat/chatSlice";
+import { selectAllMessages, setUserMessages, addMessage, setChatLoader, clearAIHistory, setActiveChat } from "@/store/features/chat/chatSlice";
+import clsx from "clsx";
 
 export default function ChatArea() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -19,19 +20,19 @@ export default function ChatArea() {
         return state.auth
     });
 
-    const { activeChat , isLoadingChatData} = useSelector((state: RootState) => {
+    const { activeChat, isLoadingChatData, currentUserRole } = useSelector((state: RootState) => {
         return state.chat
     });
-    const [isLoading,setIsLoading] = useState<boolean>(true);
     const dispatch = useDispatch();
 
     useEffect(() => {
         const socket = getSocket();
 
-
-        // Load past messages
+        // Load past messages only for user conversations
         socket?.on("messages_loaded", (pastMessages) => {
-            dispatch(setUserMessages(pastMessages.messages));
+            if (currentUserRole === 'user') {
+                dispatch(setUserMessages(pastMessages.messages));
+            }
         });
 
         // Handle incoming private messages (for all conversations)
@@ -45,11 +46,16 @@ export default function ChatArea() {
             }
         });
 
+        socket?.on('user_typing', (typingData) => {
+            console.log(typingData);
+        })
+
         return () => {
             socket?.off("messages_loaded");
             socket?.off('private_message');
+            socket?.off('user_typing');
         };
-    }, [dispatch, activeChat]);
+    }, [dispatch, activeChat, currentUserRole]);
 
     const messages = useSelector(selectAllMessages);
 
@@ -70,6 +76,7 @@ export default function ChatArea() {
                             src={activeChat.avatarUrl}
                             isOnline={activeChat.isOnline}
                             size="md"
+                            role={currentUserRole}
                         />
                         <div>
                             <h2 className="text-lg font-semibold text-white">{activeChat.username}</h2>
@@ -80,6 +87,24 @@ export default function ChatArea() {
                     </div>
 
                     <div className="flex gap-2">
+                        {currentUserRole === 'chatbot' && (
+                            <button 
+                                className="p-2 relative rounded-full hover:bg-black/20 text-gray-400 transition-colors cursor-pointer"
+                                onClick={() => {
+                                    dispatch(clearAIHistory());
+                                    // Clear messages from the current chat by setting active chat again
+                                    dispatch(setActiveChat({
+                                        currentUserRole: 'chatbot',
+                                        activeChat: activeChat
+                                    }));
+                                }}
+                                title="Clear conversation"
+                            >
+                                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        )}
                         <button className="p-2 relative rounded-full hover:bg-black/20 text-gray-400 transition-colors cursor-pointer">
                             <IoCallOutline className="h-6 w-6" />
                         </button>
@@ -98,33 +123,39 @@ export default function ChatArea() {
                     </div>
                     : (
                         messages.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-gray-400">
-                        <p>No messages yet. Start the conversation!</p>
-                    </div>
-                ) : (
-                    <>
-                        {messages.map(message => (
-                            <MessageBubble
-                                key={message.id}
-                                isSentByCurrentUser={message.sender.id === currentUser?.id}
-                                message={message}
-                                currentUserAvatar={currentUser?.avatarUrl!}
-                                otherUserAvatar={activeChat && activeChat.avatarUrl}
-                            />
+                            <div className="flex items-center justify-center h-full text-gray-400">
+                                <p className={clsx(
+                                    currentUserRole === "user" ? 
+                                    "text-center text-lg" :
+                                    "text-2xl text-shadow-[0px_10px_30px_rgba(245,158,11,0.6),_0px_5px_20px_rgba(245,158,11,0.5)]"
+                                )} >{currentUserRole === "user" ? " No messages yet. Start the conversation!" : "Welcome to Sage AI. How can I help you?"}</p>
+                            </div>
+                        ) : (
+                            <>
+                                {messages.map(message => (
+                                    <MessageBubble
+                                        key={message.id}
+                                        isSentByCurrentUser={message.sender.id === currentUser?.id}
+                                        message={message}
+                                        currentUserAvatar={currentUser?.avatarUrl || null}
+                                        otherUserAvatar={activeChat && activeChat.avatarUrl}
+                                    />
+                                ))}
+                                {/* Invisible div to scroll to */}
+                                <div ref={messagesEndRef} />
+                            </>
                         ))}
-                        {/* Invisible div to scroll to */}
-                        <div ref={messagesEndRef} />
-                    </>
-                ))}
             </div>
 
             {/* Fixed Message Input Field */}
-            <div className="p-4 border-t border-gray-700 bg-inherit sticky bottom-0 z-20">
-                <MessageInput
-                    otherUserId={activeChat!.userId}
-                    convId={activeChat!.convId}
-                />
-            </div>
+            {activeChat && (
+                <div className="p-4 border-t border-gray-700 bg-inherit sticky bottom-0 z-20">
+                    <MessageInput
+                        otherUserId={activeChat.userId}
+                        convId={activeChat.convId}
+                    />
+                </div>
+            )}
         </div>
     )
 }

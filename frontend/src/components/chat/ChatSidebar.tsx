@@ -3,23 +3,30 @@ import Avatar from "@/components/ui/Avatar";
 import Input from "@/components/ui/Input";
 import { useLogoutMutation } from "@/store/features/authentication/authApi";
 import { clearCredentials } from "@/store/features/authentication/authSlice";
-import { selectAllConversations, setActiveChat, setIntitalChatData, addConversation, setChatLoader } from "@/store/features/chat/chatSlice";
+import { selectAllConversations, setActiveChat, setIntitalChatData, addConversation, setChatLoader, setChatbotStatus, clearAIHistory } from "@/store/features/chat/chatSlice";
 import store, { RootState } from "@/store/store";
 import { ApiError } from "@/types/api";
 import { useRouter } from "next/navigation";
 import { HiOutlineLogout } from "react-icons/hi";
-import {  IoMdSearch } from "react-icons/io";
+import { IoMdSearch } from "react-icons/io";
 import { useDispatch, useSelector } from "react-redux";
 import ChatListItem from "../ui/ChatListItem";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import AvailableUsersList from "../ui/AvailableUsersList";
 import { getSocket } from "@/libs/socket";
 import { PiHeadCircuit } from "react-icons/pi";
+import { UserConversations } from "@/types/socketEvents";
+import { useGetAllUsersQuery } from "@/store/features/users/userApi";
+import { UserDisplayInfo } from "@/types";
 
 export default function ChatSidebar() {
 
     const { user: currentUser } = useSelector((state: RootState) => {
         return state.auth
+    });
+
+    const { isChatbotActive } = useSelector((state: RootState) => {
+        return state.chat
     });
     const conversations = useSelector(selectAllConversations);
 
@@ -28,7 +35,22 @@ export default function ChatSidebar() {
 
     const [logout, { data, error }] = useLogoutMutation();
     const [searchContent, setSearchContent] = useState<string>('');
-    const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
+    const [showUserDialog, setShowUserDialog] = useState<boolean>(false);
+    const dialogRef = useRef<HTMLDivElement>(null);
+
+    // Get all users from database
+    const { data: allUsers, isLoading: isLoadingUsers } = useGetAllUsersQuery();
+
+    // Filter users based on search content and exclude current user
+    const filteredUsers = useMemo(() => {
+        if (!allUsers?.users) return [];
+        
+        return allUsers.users.filter(user => 
+            user.id !== currentUser?.id && 
+            (searchContent.trim() === '' || 
+             user.username.toLowerCase().includes(searchContent.toLowerCase()))
+        );
+    }, [allUsers, searchContent, currentUser]);
 
     const handleLogout = async () => {
         try {
@@ -47,8 +69,8 @@ export default function ChatSidebar() {
         }
     }
 
-    // Handler for when user selects someone from available users list
-    const handleUserSelect = (user: any) => {
+    // Handler for when user selects someone from the dialog
+    const handleUserSelect = (user: UserDisplayInfo) => {
         const socket = getSocket();
 
         // Check if conversation already exists
@@ -59,32 +81,60 @@ export default function ChatSidebar() {
         if (existingConv) {
             // If conversation exists, set it as active
             dispatch(setActiveChat({
-                userId: parseInt(existingConv.otherUser.id),
-                avatarUrl: existingConv.otherUser.avatarUrl,
-                isOnline: existingConv.otherUser.isOnline,
-                convId: existingConv.id,
-                username: existingConv.otherUser.username
+                activeChat: {
+                    userId: parseInt(existingConv.otherUser.id),
+                    avatarUrl: existingConv.otherUser.avatarUrl,
+                    isOnline: existingConv.otherUser.isOnline,
+                    convId: existingConv.id,
+                    username: existingConv.otherUser.username
+                }
             }));
             socket?.emit('get_messages', { conversationId: existingConv.id });
             dispatch(setChatLoader(true));
         } else {
             // If no conversation exists, create new chat
             dispatch(setActiveChat({
-                userId: parseInt(user.id),
-                avatarUrl: user.avatarUrl,
-                isOnline: user.isOnline,
-                convId: 0, // temporary ID for new conversation
-                username: user.username
+                activeChat: {
+                    userId: parseInt(user.id),
+                    avatarUrl: user.avatarUrl,
+                    isOnline: user.isOnline,
+                    convId: 0, // temporary ID for new conversation
+                    username: user.username
+                }
             }));
             // Don't emit get_messages for new conversations since they don't exist yet
         }
 
-        // Hide suggestions after selection
-        setShowSuggestions(false);
+        // Hide dialog and clear search
+        setShowUserDialog(false);
+        setSearchContent('');
     };
 
-    useEffect(() => {
+    // Handle search input focus
+    const handleSearchFocus = () => {
+        setShowUserDialog(true);
+    };
 
+    // Handle search input changes
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchContent(e.target.value);
+    };
+
+    // Close dialog if click outside
+    useEffect(() => {
+        if (!showUserDialog) return;
+        function handleClickOutside(event: MouseEvent) {
+            if (dialogRef.current && !dialogRef.current.contains(event.target as Node)) {
+                setShowUserDialog(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showUserDialog]);
+
+    useEffect(() => {
         const socket = getSocket();
 
         if (socket) {
@@ -98,14 +148,16 @@ export default function ChatSidebar() {
             socket?.on('conversation_created', (conversationData) => {
                 console.log("New conversation created:", conversationData);
                 dispatch(addConversation(conversationData));
-                
+
                 // If this conversation matches the current active chat, update the convId
                 const activeChat = store.getState().chat.activeChat;
-                if (activeChat && activeChat.convId === 0 && 
+                if (activeChat && activeChat.convId === 0 &&
                     activeChat.userId === parseInt(conversationData.otherUser.id)) {
                     dispatch(setActiveChat({
-                        ...activeChat,
-                        convId: conversationData.id
+                        activeChat: {
+                            ...activeChat,
+                           convId: conversationData.id
+                        }
                     }));
                 }
             });
@@ -137,7 +189,8 @@ export default function ChatSidebar() {
                         isOnline={currentUser?.isOnline}
                         src={currentUser?.avatarUrl}
                         username={currentUser?.username!}
-                        size="md" />
+                        size="md"
+                        role="user"/>
                     <span className="text-lg font-semibold text-white">{currentUser?.username}</span>
                 </div>
                 {/* logout button */}
@@ -149,25 +202,48 @@ export default function ChatSidebar() {
             </div>
 
             {/* search input */}
-            <div className="mb-4 z-10 relative"
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => setShowSuggestions(false)}>
+            <div className="mb-4 z-10 relative">
                 <Input
-                    placeholder="Search chats or users..."
+                    placeholder="Search users..."
                     icon={IoMdSearch}
                     value={searchContent}
-                    onChange={(e) => setSearchContent(e.target.value)}
+                    onChange={handleSearchChange}
+                    onFocus={handleSearchFocus}
                     additionalClass="bg-[var(--background-dark)]/50 border-gray-700 text-gray-100 placeholder-gray-400 focus:border-[#42a5f5] focus:ring-[#42a5f5]/20"
                 />
-                {showSuggestions &&
-                    <AvailableUsersList
-                        additionalClass="absolute z-100 w-full"
-                        onUserSelect={handleUserSelect}
-                    />}
+                {/* User Selection Dialog using AvailableUsersList */}
+                {showUserDialog && (
+                    <div
+                        ref={dialogRef}
+                        className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a2e]/95 backdrop-blur-md rounded-lg border border-gray-700 shadow-lg max-h-60 overflow-y-auto z-50"
+                    >
+                        {isLoadingUsers ? (
+                            <div className="p-4 text-center text-gray-400">
+                                <div className="h-4 w-4 border-2 border-gray-500 border-t-transparent animate-spin mx-auto mb-2"></div>
+                                Loading users...
+                            </div>
+                        ) : filteredUsers.length > 0 ? (
+                            <div className="py-2">
+                                <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                                    All Users ({filteredUsers.length})
+                                </div>
+                                <AvailableUsersList
+                                    additionalClass="bg-transparent p-0"
+                                    onUserSelect={handleUserSelect}
+                                    filteredUsers={filteredUsers}
+                                />
+                            </div>
+                        ) : (
+                            <div className="p-4 text-center text-gray-400">
+                                {searchContent.trim() ? 'No users found' : 'No users available'}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* chat list area */}
-            <div className="flex-grow overflow-y-auto space-y-3 pr-2  ">
+            <div className="flex-grow overflow-y-auto space-y-3 pr-2">
                 {conversations?.map(conv => {
                     return (
                         <ChatListItem
@@ -176,17 +252,34 @@ export default function ChatSidebar() {
                         />
                     )
                 })}
+                
                 {conversations.length === 0 && (
                     <p className="text-gray-500 text-center mt-10">No chats yet.</p>
                 )}
             </div>
 
-            <div className="absolute bottom-2.5 right-2">
+            <div className="absolute bottom-2.5 right-2"
+                onClick={() => {
+                    // Clear AI conversation history when starting new AI chat
+                    dispatch(clearAIHistory());
+                    
+                    dispatch(setActiveChat({
+                        currentUserRole: 'chatbot',
+                        activeChat: {
+                            userId: 150,
+                            convId: 150,
+                            avatarUrl: null,
+                            isOnline: true,
+                            username: "Sage AI"
+                        }
+                    }))
+                    dispatch(setChatbotStatus(true))
+                }}
+            >
                 <button className="p-2 relative rounded-full  text-amber-500  hover:bg-yellow-500/10 transition-colors cursor-pointer z-10 ">
                     <PiHeadCircuit className="h-8 w-8 cursor-pointer bg-yellow-500/10   shadow-[0px_10px_30px_rgba(245,158,11,0.3),_0px_5px_20px_rgba(245,158,11,0.2)] rounded-full" />
                 </button>
             </div>
-
         </div>
     )
 }

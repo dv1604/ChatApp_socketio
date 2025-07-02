@@ -11,7 +11,8 @@ export default function Input({
     onChange, 
     name, 
     additionalClass,
-    fullWidth = true // Add this prop with default true
+    fullWidth = true, // Add this prop with default true
+    onFocus // Add onFocus prop
 }: {
     label?: string,
     type?: string,
@@ -22,7 +23,8 @@ export default function Input({
     name?: string,
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void,
     additionalClass?: string,
-    fullWidth?: boolean // Add this to the type definition
+    fullWidth?: boolean, // Add this to the type definition
+    onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void // Add onFocus to the type definition
 }) {
 
     const inputStyle = clsx(
@@ -61,6 +63,7 @@ export default function Input({
                     name={name}
                     autoComplete="off"
                     onChange={onChange}
+                    onFocus={onFocus} // Pass onFocus to input
                 />
             </div>
         </div>

@@ -5,6 +5,7 @@ import Avatar from "./Avatar";
 import { useState } from "react";
 import { formatMessageTime } from "@/utils/formattedTime";
 import { ConversationMessages } from "@/types/socketEvents";
+import { getSocket } from "@/libs/socket";
 
 export default function MessageBubble({
     message,
@@ -23,6 +24,13 @@ export default function MessageBubble({
     const [showTimestamp, setShowTimestamp] = useState(false);
     const senderAvatar = isSentByCurrentUser ? currentUserAvatar : otherUserAvatar;
     const senderUsername = message.sender.username;
+    
+    // Determine if this is an AI message
+    const isAiMessage = message.sender.id === "ai" || message.sender.username === "Sage AI";
+    const avatarRole = isAiMessage ? "chatbot" : "user";
+    const socket = getSocket();
+
+    
 
     return (
         <div className={clsx(
@@ -36,6 +44,7 @@ export default function MessageBubble({
                     src={senderAvatar}
                     size="sm"
                     additionalClass='flex-shrink-0'
+                    role={avatarRole}
                 />
             )}
 
@@ -43,7 +52,9 @@ export default function MessageBubble({
                 "flex flex-col max-w-[70%] px-4 py-2 rounded-xl relative shadow-[2px_4px_30px_rgba(0,0,0,0.3)]",
                 isSentByCurrentUser ?
                     "bg-gradient-to-r from-purple-700 to-blue-500 text-white rounded-br-none"
-                    : " bg-gray-700 text-gray-100 rounded-bl-none"
+                    : isAiMessage ?
+                        "bg-gradient-to-r from-amber-600 to-orange-500 text-white rounded-bl-none"
+                        : " bg-gray-700 text-gray-100 rounded-bl-none"
             )}
            
                 onMouseEnter={() => setShowTimestamp(true)}

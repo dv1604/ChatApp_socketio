@@ -49,7 +49,7 @@ export default function AuthGuard({
                     toast.error("Token is invalid or expired. Please login again");
                 }
             } catch (error) {
-                console.error("Error verifying token:", error);
+                console.log("Error verifying token:", error);
                 
                 setIsTokenValid(false);
                 if (error && typeof error === 'object' ) {

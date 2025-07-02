@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import groupsRoutes from './routes/groups';
 import usersRoutes from './routes/users';
+import aiRoutes from './routes/ai';
 import { authenticateSocket } from './middleware/socketAuth';
 import { handleConnection, handleDisconnection } from './handlers/connections';
 import { handleGetMessages, handleGroupMessage, handlePrivateMessage } from './handlers/messages';
@@ -57,6 +58,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 // group related routes
 app.use('/api/groups', groupsRoutes);
+// ai chat route
+app.use('/api/ai',aiRoutes)
 
 // socket.io authentication middleware for incoming socket connection
 io.use(authenticateSocket);

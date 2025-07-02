@@ -1,13 +1,16 @@
 import { useGetAllUsersQuery } from "@/store/features/users/userApi";
 import clsx from "clsx";
 import Avatar from "./Avatar";
+import { UserDisplayInfo } from "@/types";
 
 export default function AvailableUsersList({
     additionalClass,
-    onUserSelect
+    onUserSelect,
+    filteredUsers
 }: {
     additionalClass?: string;
-    onUserSelect: (user: any) => void;
+    onUserSelect: (user: UserDisplayInfo) => void;
+    filteredUsers?: UserDisplayInfo[];
 }) {
 
     const { data } = useGetAllUsersQuery();
@@ -15,13 +18,14 @@ export default function AvailableUsersList({
     console.log(data);
 
     const containerStyling = clsx(
-        "bg-gray-200 p-4 rounded-xl",
+        "bg-gray-200 p-4 rounded-xl cursor-pointer hover:bg-gray-300/10 z-200",
         additionalClass
     )
 
-    const usersList = data ? data.users : null;
+    // Use filteredUsers if provided, otherwise use all users from API
+    const usersList = filteredUsers || (data ? data.users : null);
 
-    const handleMouseDown = (user: any) => {
+    const handleMouseDown = (user: UserDisplayInfo) => {
         onUserSelect(user);
     };
 
@@ -37,8 +41,9 @@ export default function AvailableUsersList({
                         username={user.username}
                         src={user.avatarUrl}
                         additionalClass="h-3 w-3"
+                        role="user"
                     />
-                    <span className="text-lg font-semibold capitalize">{user.username}</span>
+                    <span className="text-lg text-gray-300 font-semibold capitalize">{user.username}</span>
                     <div className={clsx(
                         "h-2.5 w-2.5 rounded-full",
                         {
